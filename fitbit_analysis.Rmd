@@ -1,0 +1,285 @@
+
+---
+title: "Bellabeat Case Study"
+name : "Toyal Mazi"
+date: "18/04/2024"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1. Ask
+
+## Business Task:
+
+Bellabeat, a company that manufactures health-focused smart devices, wants to understand how consumers use their fitness trackers. The goal is to analyze data from similar devices and provide insights that will help Bellabeat shape an effective marketing strategy to grow its user base and increase product engagement.
+
+# 2. Prepare
+
+## Data Source:
+
+  - Dataset: FitBit Fitness Tracker Data from Kaggle
+  - Link: https://www.kaggle.com/datasets/arashnic/fitbit
+  - Time Period: March 12 to May 12, 2016
+   
+## Credibility Check (ROCCC):
+  - Reliable: From consistent sources (Fitbit API).
+  - Original: User-generated data with consent.
+  - Comprehensive: Covers various health metrics.
+  - Current: Slightly outdated (2016), but patterns are still relevant.
+  - Cited: Provided through Kaggle.
+  
+## Privacy and Ethics:
+
+  - Data is anonymized and shared with consent.
+
+  
+# 3. Process
+
+## Tools Used:
+
+  - Google Sheets: For quick exploratory data review and cleaning
+  - R and RStudio: For in-depth analysis and visualizations
+  - R Packages: tidyverse, ggplot2, dplyr.
+  
+## Data Cleaning Steps and Preparation:
+
+1. Google Sheets: Reviewed raw CSVs for structure, checked for nulls and    duplicates.
+
+   Sample formula used:
+
+   =COUNTBLANK(A2:Z1000) ->To identify missing values
+   =UNIQUE(A2:A1000) ->To identify duplicates
+
+2. RStudio: Imported and cleaned the data programmatically.
+
+## Load Packages
+
+```{r load-packages}
+library(tidyverse)
+library(ggplot2)
+library(here)
+```
+
+## Load CSV Files
+
+```{r load-data}
+daily_activity <- read.csv(here("case_study_1_fitbit", "daily_activity_merged.csv"))
+sleep_day <- read.csv(here("case_study_1_fitbit", "sleepDay_merged.csv"))
+```
+
+## View First Few Rows
+
+```{r head-data}
+head(daily_activity)
+head(sleep_day)
+```
+
+## Column Names
+
+```{r column-names}
+colnames(daily_activity)
+colnames(sleep_day)
+```
+
+>  Both datasets have a common key: **"Id"**, which can be used to join them.
+
+## Number of Unique Participants and Observations
+
+```{r unique-participants}
+n_distinct(daily_activity$Id)  # 33 participants
+n_distinct(sleep_day$Id)       # 24 participants
+
+nrow(daily_activity)  # 940 observations(Records)
+nrow(sleep_day)       # 413 observations(Records)
+
+#This shows that fewer users are consistently using the sleep tracker compared to activity tracker. We can say by observing the records
+```
+
+## Summary Statistics
+
+### Daily Activity Summary
+
+```{r summary-daily}
+daily_activity %>%
+  select(TotalSteps, TotalDistance, SedentaryMinutes) %>%
+  summary()
+```
+
+##“Average daily steps: ~7,500”
+
+```{r average-daily}
+ggplot(daily_activity, aes(x = TotalSteps)) +
+  geom_histogram(binwidth = 1000, fill = "skyblue", color = "white") +
+  labs(title = "Distribution of Daily Steps")
+```
+
+### Sleep Summary
+
+```{r summary-sleep}
+sleep_day %>%
+  select(TotalSleepRecords, TotalMinutesAsleep, TotalTimeInBed) %>%
+  summary()
+```
+
+
+## Visualization: Relationships
+
+### I. Steps vs. Sedentary Minutes
+
+```{r plot-steps-sedentary}
+ggplot(data = daily_activity, aes(x = TotalSteps, y = SedentaryMinutes)) +
+  geom_point(color = "steelblue", alpha = 0.6) +
+  geom_smooth(method = "lm", color = "darkred", se = TRUE) +
+  labs(
+    title = "Relationship Between Total Steps and Sedentary Minutes",
+    subtitle = "Does more activity mean less sedentary time?",
+    x = "Total Steps",
+    y = "Sedentary Minutes"
+  ) +
+  theme_minimal()
+```
+
+### II. Minutes Asleep vs. Time in Bed
+
+```{r plot-sleep-bed}
+ggplot(data = sleep_day, aes(x = TotalMinutesAsleep, y = TotalTimeInBed)) +
+  geom_point(color = "darkgreen", alpha = 0.6) +
+  geom_smooth(method = "lm", color = "black", se = TRUE) +
+  labs(
+    title = "Minutes Asleep vs Total Time in Bed",
+    subtitle = "Do users spend more time in bed than they sleep?",
+    x = "Total Minutes Asleep",
+    y = "Total Time in Bed (minutes)"
+  ) +
+  theme_minimal()
+```
+
+## Merge Datasets
+
+```{r merge-data}
+combined_data <- merge(sleep_day, daily_activity, by = "Id")
+write.csv(combined_data, "combined_fitbit_data.csv", row.names = FALSE)
+
+combined_data1 <- full_join(sleep_day, daily_activity, by = "Id")
+write.csv(combined_data1, "combined_fitbit_data1.csv", row.names = FALSE)
+
+n_distinct(combined_data$Id)    # 24
+n_distinct(combined_data1$Id)   # 33
+```
+
+### III. Sleep vs. Steps with Gradient Coloring
+
+```{r enhanced-plot}
+ggplot(data = combined_data, aes(x = TotalMinutesAsleep, y = TotalSteps)) +
+  geom_point(
+    aes(color = TotalMinutesAsleep),
+    size = 3,
+    alpha = 0.7,
+    shape = 16
+  ) +
+  scale_color_gradient(low = "lightblue", high = "darkblue") +
+  geom_smooth(method = "lm", color = "red", se = FALSE, linetype = "dashed") +
+  labs(
+    title = "Relationship Between Sleep Duration and Daily Step Count",
+    subtitle = "Fitbit Data: Visualizing if more sleep correlates with more steps",
+    x = "Total Minutes Asleep",
+    y = "Total Steps",
+    color = "Sleep Duration"
+  ) +
+  theme_minimal(base_size = 14)
+```
+
+## Additional Visualizations
+
+### IV. Calories Burned vs Total Steps
+
+```{r positive-linear-correlation}
+# correlation b/w total steps and calories burned
+
+cor(daily_activity$TotalSteps, daily_activity$Calories, use = "complete.obs")
+
+# If this gives a correlation coefficient (r) around 0.5 or higher, it indicates a positive relationship.
+
+```
+
+```{r plot-calories-steps}
+ggplot(data = daily_activity, aes(x = TotalSteps, y = Calories)) +
+  geom_point(color = "orange", alpha = 0.6) +
+  geom_smooth(method = "lm", color = "darkorange", se = TRUE) +
+  labs(
+    title = "Calories Burned vs Total Steps",
+    subtitle = "Does walking more, burn more calories?",
+    x = "Total Steps",
+    y = "Calories Burned"
+  ) +
+  theme_minimal()
+```
+
+### V. Time Spent in Various Activity Intensities
+
+```{r plot-intensity-levels}
+intensity_data <- daily_activity %>%
+  select(VeryActiveMinutes, FairlyActiveMinutes, LightlyActiveMinutes, SedentaryMinutes) %>%
+  pivot_longer(cols = everything(), names_to = "ActivityLevel", values_to = "Minutes")
+
+ggplot(intensity_data, aes(x = ActivityLevel, y = Minutes, fill = ActivityLevel)) +
+  geom_boxplot() +
+  labs(
+    title = "Time Spent in Various Activity Intensities",
+    subtitle = "Distribution of minutes per day across activity levels",
+    x = "Activity Level",
+    y = "Minutes per Day"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+### VI. Daily Activity Breakdown - Bar Plot
+
+```{r daily-activity-breakdown}
+daily_activity_long <- daily_activity %>%
+  select(Id, VeryActiveMinutes, FairlyActiveMinutes, LightlyActiveMinutes, SedentaryMinutes) %>%
+  pivot_longer(cols = -Id, names_to = "Activity", values_to = "Minutes")
+
+ggplot(daily_activity_long, aes(x = Activity, y = Minutes, fill = Activity)) +
+  geom_bar(stat = "summary", fun = "mean") +
+  labs(
+    title = "Average Time Spent in Each Activity Category",
+    y = "Average Minutes",
+    x = "Activity Level"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+# Analyze
+
+## Findings:
+
+- Average daily steps: ~7,500
+- Positive linear correlation between total steps and calories burned
+- Sleep tracking is underutilized compared to activity tracking
+
+# 5. Share
+
+## Insights Shared: ##
+
+- Users walking more than 10,000 steps/day burn significantly more calories.
+- Most users are more active on weekdays than weekends.
+- Sleep tracking is inconsistent across users.
+
+# 6. Act
+  
+## Strategic Recommendations for Bellabeat: ##
+
+- Encourage consistent step goals, Many users are sedentary; marketing should promote step challenges.
+- Promote daily step goals and rewards for 10,000+ steps.
+- Highlight calorie-tracking features and how they tie to fitness goals.
+- Add push notifications or reminders to wear the device consistently.
+- Educate users on the health benefits of regular sleep tracking.
+
