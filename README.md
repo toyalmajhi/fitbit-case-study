@@ -3,7 +3,7 @@
 
 This case study explores the use of smart fitness devices by analyzing user data from Fitbit devices. The goal is to gain insights into users' daily activity and sleep patterns to support marketing and product strategy for Bellabeat, a wellness-focused tech company.
 
----
+--
 
 ## 📌 Project Summary
 
