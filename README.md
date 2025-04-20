@@ -20,16 +20,15 @@ This case study explores the use of smart fitness devices by analyzing user data
 - **R**: 
   - `tidyverse`: Data wrangling
   - `ggplot2`: Data visualization
-- **GitHub**: Project hosting and version control
 
 ---
 
 ## 🧹 Data Cleaning
 
 ### 🟢 In Google Sheets:
-- Removed duplicate rows from datasets
-- Deleted rows with empty/blank values
-- Saved cleaned CSVs for import into R
+- Removed duplicate rows from datasets.
+- Deleted rows with empty/blank values.
+- Saved cleaned CSVs for import into R.
 
 ### 🟢 In R:
 ```r
@@ -39,18 +38,33 @@ library(ggplot2)
 daily_activity <- read_csv("dailyActivity_cleaned.csv") %>% clean_names()
 sleep_day <- read_csv("sleepDay_cleaned.csv") %>% clean_names()
 ```
+```r
+#merging two datasets
+combined_data <- merge(sleep_day, daily_activity, by="Id")
+View(combined_data)
+
+#fewer participants appear in the combined set (24) than in daily activity (33) an inner join was used by default
+
+# can use full join if wanted
+combined_data1 <- full_join(sleep_day, daily_activity, by="Id")
+View(combined_data1)
+
+n_distinct(combined_data$Id) #24 observation 
+n_distinct(combined_data1$Id) #33 observation
+```
+- Data Visualization is based on 24 observation.
 - Rest of the code in the r file or can also acess R markdown file (pdf/html)👍.
 ---
 
 ## 📊 Data Analysis 
 
-- Users average 7,500 steps per day
+- Users average 7,500 steps per day.
 
-- Users average 420 minutes/day (7 hours) asleep
+- Users average 420 minutes/day (7 hours) asleep.
 
-- Strong positive correlation between Total Time in Bed and Total Minutes Asleep
+- Strong positive correlation between Total Time in Bed and Total Minutes Asleep.
 
-- Weak negative correlation between Steps Taken and Sedentary Minutes
+- Weak negative correlation between Steps Taken and Sedentary Minutes.
 
 ---
 
